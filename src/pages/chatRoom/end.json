@@ -1,0 +1,22 @@
+{
+  "action": "end_conv_agent",
+  "agent_id": 1114079,
+  "agent_nickname": "小月",
+  "body": {
+    "agent_msg_num": 11,
+    "client_msg_num": 13,
+    "conv_id": 335984241,
+    "ended_by": "agent",
+    "evaluation": true,
+    "msg_num": 24
+  },
+  "created_on": "2018-09-22T09:21:17.197284",
+  "enterprise_id": 9735,
+  "id": 1901830685,
+  "realname": "蔡艳芳",
+  "source": "web",
+  "target_id": "335984241",
+  "target_kind": "conv",
+  "trace_start": 1537608077.213918,
+  "track_id": "1AYdfnmurXowMmDTkvNPwAhpWiG"
+}
