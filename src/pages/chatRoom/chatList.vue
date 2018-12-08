@@ -42,7 +42,13 @@
                 transitionName: "",
             }
         },
+        activated() {
+            log(this.$route)
+        },
         mounted() {
+            console.log(
+                this.$route
+            )
             this.publicList = [
                 {
                     src: "http://pfqu2aq6k.bkt.clouddn.com//o_1coev7ev21bsq1h7819l913b21eiqe.jpg",
@@ -60,8 +66,12 @@
             publicItemClick(item) {
 
                 this.showChatList = !this.showChatList
-                this.$router.push({name: "chatOne",})
-            }
+                this.$router.push({
+                    name: "chatOne",
+                    query: {chatRedirect: "none"},
+                })
+            },
+
         },
         watch: {
             $route(to, from) {

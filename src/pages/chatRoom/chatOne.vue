@@ -107,12 +107,11 @@
         computed: {
             ...mapGetters(["chatWSServer", "userInfo",]),
         },
-        created() {
-            // 防止热加载调试建立多个ws连接
-            this.wsConnecting = false
-            // this.creatw3cSocket()
-            this.createSocketIOClient()
-        },
+        // created() {
+        //     // 防止热加载调试建立多个ws连接
+        //     this.wsConnecting = false
+        //     // this.creatw3cSocket()
+        // },
         beforeDestroy() {
             // 重新显示tabbar
             let tabbar = document.getElementsByClassName("weui-tabbar")[0]
@@ -127,6 +126,14 @@
                 timeStamp: Math.round(new Date().getTime() / 1000),
             }
             this.io.emit("offline", obj)
+
+        },
+        activated() {
+            log(this.$route)
+        },
+        beforeMount() {
+            log(this.$route)
+            this.createSocketIOClient()
 
         },
         mounted() {
@@ -147,33 +154,57 @@
                 // this.ws.close(3333, "离开聊天室,关闭 websocket 连接")
                 // this.io.close(1000, "用户离开聊天室")
             },
+            // 点击进入私聊
             clickSomeOneAvatar(msgItem) {
                 this.chatPlaceholder = `与 ${msgItem.nickname} 私聊`
                 this.privateFor = msgItem.from_uid
-                log(`from_uid: ` + msgItem.from_uid)
-            },
-            sendMessage() {
-                if (this.message === "") return
+                log(`点击头像: `, msgItem)
 
+                // window.location.href = window.location.origin + "?privateFor=" + msgItem.from_uid + window.location.hash
+                // this.$parent.chatPrivate(msgItem.from_uid)
+
+                // this.$router.push({
+                //     name: "chatOne",
+                //     query: {chatRedirect: msgItem.from_uid},
+                // })
+
+                // 触发下线,服务器要自己设定断开与 client 的连接
                 let obj = {
-                    action: "message",
-                    from_uid: this.uid,
-                    to_uid: this.privateFor,   // 私聊的对象 || ""
-
+                    action: "offline",
                     nickname: this.userInfo.nickname,
                     username: this.userInfo.username,
-                    avatar: this.userInfo.avatar,
-                    message: this.message,
-                    message_type: "text",
-
+                    userId: this.userInfo.id,
                     timeStamp: Math.round(new Date().getTime() / 1000),
                 }
+                this.io.emit("offline", obj)
 
-                this.io.emit('message', obj)
-                // 清空输入框
-                // this.message = ""
+                // 清空消息,替换头部
+                this.chatList = []
+                document.querySelector(".reveal-messages").innerHTML = ""
+
+                // 然后重新创建一条线路
+                this.createSocketIOClient()
+
+                // 通知父组件把聊天列表重新加载
+
+                // 返回父路由
+                // this.$router.push({
+                //     name: 'chatList',
+                //     params: {chatRedirect: msgItem.from_uid},
+                //     query:{
+                //         _time:new Date().getTime()/1000 // 时间戳，刷新当前router
+                //     }
+                // })
+
+                // 强制刷新
+                // this.$router.go({
+                //     path: '/chatOne',
+                //     force: true
+                // })
+
             },
 
+            // 创建 ws 连接
             createSocketIOClient() {
                 let _this = this
 
@@ -200,9 +231,6 @@
                     console.log("ws 已触发上线")
 
                 })
-                this.io.on('registed', (data) => {
-
-                })
 
                 // 群聊
                 this.io.on('message', (data) => {
@@ -224,6 +252,30 @@
 
 
             },
+
+            // 发送消息
+            sendMessage() {
+                if (this.message === "") return
+
+                let obj = {
+                    action: "message",
+                    from_uid: this.uid,
+                    to_uid: this.privateFor,   // 私聊的对象 || ""
+
+                    nickname: this.userInfo.nickname,
+                    username: this.userInfo.username,
+                    avatar: this.userInfo.avatar,
+                    message: this.message,
+                    message_type: "text",
+
+                    timeStamp: Math.round(new Date().getTime() / 1000),
+                }
+
+                this.io.emit('message', obj)
+                // 清空输入框
+                // this.message = ""
+            },
+
             addMsgToChatList(msg) {
                 this.chatList.push(msg)
             },
@@ -257,89 +309,84 @@
             },
 
             // 用原生的 API 创建 socket
-            creatw3cSocket() {
-                if (!window.WebSocket) return
-                if (this.wsConnecting) return
-                let _this = this
-                let ws = new WebSocket(this.chatWSServer.wsUrl, "echo-protocol");
-
-                this.ws = ws
-
-                ws.onopen = function () {
-                    _this.wsConnecting = true
-                    console.log("WebSocket 已连接")
-                    _this.setchatWSServerStatus(true)
-
-                    let obj = {
-                        action: "register",
-                        UserKey: "eoi15e34o3i15oe4i1egidhytmd",
-                        UserName: "enzo",
-                        UserType: "1",
-                        data: this.message,
-                    }
-                    ws.send(JSON.stringify(obj))
-                }
-
-                ws.onmessage = function (e) {
-                    if (typeof e.data === "string") {
-                        let res = JSON.parse(e.data)
-
-                        if (res.type === "registed") {
-                            console.info("注册成功")
-                            _this.wsConnecting = false
-                        } else if (res.type === "message") {
-                            // 把收到的消息放到列表
-                            _this.addMsgToChatList(res)
-
-                        }
-
-                        // console.log("【" + _this.commonTime(res.timeStamp) + "】" + " 收到消息: ", res)
-                    }
-                }
-                // readyState changes to CLOSED. The listener receives a CloseEvent named "close".
-                ws.onclose = function (event) {
-                    let closeReason
-                    if (event.code === 1000) {
-                        closeReason = "正常关闭"
-                    } else {
-                        // 如1006等非正常关闭
-                        closeReason = "异常关闭,尝试重连"
-
-                        // 重试次数大于设置的次数，reject
-                        if (_this.retryCount >= _this.retry) {
-                            return
-                        }
-                        console.log(`断线,第 ${_this.retryCount + 1} 次重试`)
-                        // 重试统计 +1
-                        _this.retryCount++
-                        // return new Promise(resolve => {
-                        //     setTimeout(resolve, _this.retryDelay || 1)
-                        // }).then(() => {
-                        //     _this.creatw3cSocket()
-                        // })
-                        return setTimeout(() => {
-                            _this.creatw3cSocket()
-                        }, _this.retryDelay || 1)
-
-
-                    }
-                    console.log("echo-protocol ws " + closeReason)
-
-                    let nullAct = () => {
-                    }
-                    ws.onopen = nullAct;
-                    ws.onmessage = nullAct;
-                    ws.onerror = nullAct;
-                    ws.onclose = nullAct;
-                    ws = nullAct
-
-                    _this.wsConnecting = false
-                    _this.setchatWSServerStatus(false)
-                }
-                ws.onerror = function (ev) {
-                    console.log("ws 出现连接错误", ev)
-                }
-            },
+            // creatw3cSocket() {
+            //     if (!window.WebSocket) return
+            //     if (this.wsConnecting) return
+            //     let _this = this
+            //     let ws = new WebSocket(this.chatWSServer.wsUrl, "echo-protocol");
+            //
+            //     this.ws = ws
+            //
+            //     ws.onopen = function () {
+            //         _this.wsConnecting = true
+            //         console.log("WebSocket 已连接")
+            //         _this.setchatWSServerStatus(true)
+            //
+            //         let obj = {
+            //             action: "register",
+            //             UserKey: "eoi15e34o3i15oe4i1egidhytmd",
+            //             UserName: "enzo",
+            //             UserType: "1",
+            //             data: this.message,
+            //         }
+            //         ws.send(JSON.stringify(obj))
+            //     }
+            //
+            //     ws.onmessage = function (e) {
+            //         if (typeof e.data === "string") {
+            //             let res = JSON.parse(e.data)
+            //
+            //             if (res.type === "registed") {
+            //                 console.info("注册成功")
+            //                 _this.wsConnecting = false
+            //             } else if (res.type === "message") {
+            //                 // 把收到的消息放到列表
+            //                 _this.addMsgToChatList(res)
+            //
+            //             }
+            //
+            //             // console.log("【" + _this.commonTime(res.timeStamp) + "】" + " 收到消息: ", res)
+            //         }
+            //     }
+            //     // readyState changes to CLOSED. The listener receives a CloseEvent named "close".
+            //     ws.onclose = function (event) {
+            //         let closeReason
+            //         if (event.code === 1000) {
+            //             closeReason = "正常关闭"
+            //         } else {
+            //             // 如1006等非正常关闭
+            //             closeReason = "异常关闭,尝试重连"
+            //
+            //             // 重试次数大于设置的次数，reject
+            //             if (_this.retryCount >= _this.retry) {
+            //                 return
+            //             }
+            //             console.log(`断线,第 ${_this.retryCount + 1} 次重试`)
+            //             // 重试统计 +1
+            //             _this.retryCount++
+            //             return setTimeout(() => {
+            //                 _this.creatw3cSocket()
+            //             }, _this.retryDelay || 1)
+            //
+            //
+            //         }
+            //         console.log("echo-protocol ws " + closeReason)
+            //
+            //         let nullAct = () => {
+            //         }
+            //         ws.onopen = nullAct;
+            //         ws.onmessage = nullAct;
+            //         ws.onerror = nullAct;
+            //         ws.onclose = nullAct;
+            //         ws = nullAct
+            //
+            //         _this.wsConnecting = false
+            //         _this.setchatWSServerStatus(false)
+            //     }
+            //     ws.onerror = function (ev) {
+            //         console.log("ws 出现连接错误", ev)
+            //     }
+            // },
         },
         watch: {
             chatList(curVal, oldVal) {

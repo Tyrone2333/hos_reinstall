@@ -107,13 +107,19 @@ const router = new Router({
             path: '/chatRoom',
             name: 'chatList',
             component: chatList,
+            meta: {
+                requireAuth: true,  // 添加该字段，表示进入这个路由是需要登录的
+            },
             children: [
                 {
                     // 当 /user/:id/profile 匹配成功，
                     // UserProfile 会被渲染在 User 的 <router-view> 中
                     name:"chatOne",
                     path: 'chatOne',
-                    component: chatOne
+                    component: chatOne,
+                    meta: {
+                        requireAuth: true,  // 添加该字段，表示进入这个路由是需要登录的
+                    },
                 },
             ]
         },
