@@ -46,12 +46,10 @@
                                   style="overflow: hidden; word-wrap: break-word; resize: none; height: 112px;"></textarea>
                     </form>
 
-                    <!--<span class="icon   icon-send" @click="reply"></span>-->
                     <span class="weui-btn weui-btn_mini btn-none" @click="showReplyDialog=false">取消</span>
                     <span class="weui-btn weui-btn_mini weui-btn_primary" @click="replySend">确认</span>
-                    <!--<x-button mini  type="primary">primary</x-button>-->
-                    <!--<x-button mini  type="primary" @click.native="showReplyDialog=false">取消</x-button>-->
-
+                    <!--上面是直接写类名，不引入 x-button 样式不会加进来生效-->
+                    <x-button mini type="primary" style="display: none">primary</x-button>
                 </div>
             </x-dialog>
         </div>
@@ -104,7 +102,7 @@
                 this.$router.push({name: 'user', params: {id: userId}})
             },
 
-            clickReply(){
+            clickReply() {
                 this.$emit("clickReply")
             },
             // 用于显示评论框, @别人 会有一个 placeholder 样式

@@ -143,6 +143,23 @@
 
                 public_article({...data}).then((res) => {
                     this.toastSuccess(res.message)
+                    let draft = {
+                        editorValue: "**这里输入内容**", // 编辑器的内容
+                        editorHtmlValue: "",
+                        editorMDValue: "",
+                        title: "",
+                        author: "enzo",
+                        description: "",
+                        banner_img: "", // 文章列表显示的略缩图(最后一次上传的图片)
+                        joinTopicList: ["客户端测试"],
+                        optionsList: ["玩机技巧", "游戏", "分享", "问答", "编程"],
+                        minuteListValue: '2019-01-01 09:00',
+                        fuckDate: "1546275661",
+                        tags: "",
+                    }
+                    // 提交文章成功，重置草稿
+                    this.draft = draft
+
                 }).catch(err => {
                     console.error(err)
                 })
